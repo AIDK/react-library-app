@@ -28,11 +28,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // compare whether user's password matches the encrypted password
         const isPasswordValid = await compare(
-          credentials.password.toString(),
-          user[0].password,
+          credentials.password.toString().trim(),
+          user[0].password.trim(),
         );
 
         if (!isPasswordValid) return null;
+
+        console.log(
+          "returned user",
+          user[0].id.toString(),
+          user[0].fullName,
+          user[0].email,
+        );
 
         return {
           id: user[0].id.toString(),

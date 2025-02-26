@@ -21,6 +21,8 @@ export const signInWithCredentials = async (
       redirect: false,
     });
 
+    console.log({ result });
+
     // if there are any errors we return with the error
     if (result?.error) {
       return { success: false, error: result.error };
@@ -29,8 +31,8 @@ export const signInWithCredentials = async (
     // otherwise we continue
     return { success: true };
   } catch (e) {
-    console.log(e, "Signin Error");
-    return { success: false, error: "Signin Error" };
+    console.log(e, "SignIn Error");
+    return { success: false, error: "SignIn Error" };
   }
 };
 export const signUp = async (params: AuthCredentials) => {
@@ -57,12 +59,12 @@ export const signUp = async (params: AuthCredentials) => {
       fullName,
       email,
       universityId,
-      password,
+      password: hashedPassword,
       universityCard,
     });
 
     // auto sign in user
-    await signInWithCredentials({ email, password });
+    await signInWithCredentials({ email, password: hashedPassword });
 
     return { success: true };
   } catch (e) {
