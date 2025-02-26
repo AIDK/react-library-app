@@ -5,6 +5,9 @@ import { users } from "@/database/schema";
 import { hash } from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { signIn } from "@/auth";
+import { headers } from "next/headers";
+import ratelimit from "@/lib/ratelimit";
+import { redirect } from "next/navigation";
 
 export const signInWithCredentials = async (
   // we don't want to accept all the credentials so we make use of Pick<>
@@ -13,6 +16,13 @@ export const signInWithCredentials = async (
 ) => {
   const { email, password } = params;
 
+  // get current IP address
+  const ip = (await headers()).get("x-forwarded-for") || "127.0.0.1";
+  const { success } = await ratelimit.limit(ip);
+
+  // if the user is rate limited we redirect them
+  if (!success) return redirect("/too-fast");
+
   try {
     // sign the user in
     const result = await signIn("credentials", {
@@ -20,8 +30,6 @@ export const signInWithCredentials = async (
       password,
       redirect: false,
     });
-
-    console.log({ result });
 
     // if there are any errors we return with the error
     if (result?.error) {
@@ -35,8 +43,16 @@ export const signInWithCredentials = async (
     return { success: false, error: "SignIn Error" };
   }
 };
+
 export const signUp = async (params: AuthCredentials) => {
   const { fullName, email, universityId, password, universityCard } = params;
+
+  // get current IP address
+  const ip = (await headers()).get("x-forwarded-for") || "127.0.0.1";
+  const { success } = await ratelimit.limit(ip);
+
+  // if the user is rate limited we redirect them
+  if (!success) return redirect("/too-fast");
 
   // we check if the user already exists
   const existingUser = await db
@@ -64,7 +80,7 @@ export const signUp = async (params: AuthCredentials) => {
     });
 
     // auto sign in user
-    await signInWithCredentials({ email, password: hashedPassword });
+    await signInWithCredentials({ email, password });
 
     return { success: true };
   } catch (e) {
